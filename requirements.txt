@@ -1,0 +1,8 @@
+streamlit
+langchain
+langgraph
+openai
+googlemaps
+requests
+pillow
+pymongo
