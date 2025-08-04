@@ -1,5 +1,10 @@
 import streamlit as st
 from graph.agent_flow import run_agent_flow
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+print("HF_API_TOKEN:", os.getenv("HF_API_TOKEN"))  # 🔍 Check if token loads
 
 st.set_page_config(page_title="Ecosync AI", layout="wide")
 

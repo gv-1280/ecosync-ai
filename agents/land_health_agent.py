@@ -1,19 +1,40 @@
-from transformers import pipeline
+# agents/land_health_agent.py
+import os
+import requests
 
-land_llm = pipeline("text2text-generation", model="google/flan-t5-large")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+TEXT_MODEL = "tiiuae/falcon-rw-1b"
+IMAGE_MODEL = "openai/clip-vit-base-patch32"
 
 def land_health_node(state):
-    concern = state.get("input", "").strip()
-
-    prompt = (
-        "You are a wildlife vet. The user reports a health concern in a land animal.\n"
-        f"Concern: {concern}\n"
-        "Give the likely diagnosis and a basic remedy or recommendation."
-    )
-
-    try:
-        response = land_llm(prompt, max_length=150, do_sample=True)[0]['generated_text']
-    except Exception:
-        response = "🦌 Sorry, I couldn’t process the land animal issue."
-
-    return {"response": response}
+    if "image" in state:
+        image_bytes = state["image"]
+        headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{IMAGE_MODEL}",
+            headers=headers,
+            files={"inputs": image_bytes}
+        )
+        result = response.json()
+        output = result[0]["label"] if isinstance(result, list) else "Could not classify image."
+        return {"response": f"🖼️ Detected issue: {output}"}
+    
+    elif "input" in state:
+        text = state["input"]
+        prompt = f"A user described a land animal with this issue: {text}. Suggest the likely cause and treatment."
+        headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+        payload = {"inputs": prompt}
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{TEXT_MODEL}",
+            headers=headers,
+            json=payload
+        )
+        if response.status_code == 200:
+            result = response.json()
+            answer = result[0]["generated_text"]
+        else:
+            answer = "⚠️ Sorry, I couldn't analyze the issue right now."
+        return {"response": answer}
+    
+    else:
+        return {"response": "Please describe the land animal issue or upload an image."}

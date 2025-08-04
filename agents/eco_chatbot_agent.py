@@ -1,23 +1,33 @@
-from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+import os
+import requests
 
-# Load Mistral model
-tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct")
-model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-Instruct")
-
-eco_llm = pipeline("text-generation", model=model, tokenizer=tokenizer)
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HF_MODEL = "google/flan-t5-small"  # or flan-t5-large if you're using that
 
 def eco_chatbot_node(state):
-    question = state.get("input", "").strip()
+    user_input = state.get("input", "")
+    prompt = f"Answer like a helpful SDG chatbot about marine life, forests, biodiversity, and pollution: {user_input}"
 
-    prompt = (
-        f"<s>[INST] You are an environmental chatbot. Help answer questions about marine life, forests, biodiversity, pollution, and SDG goals in simple language.\n"
-        f"User: {question} [/INST]"
+    headers = {
+        "Authorization": f"Bearer {HF_API_TOKEN}"
+    }
+    payload = {
+        "inputs": prompt
+    }
+
+    response = requests.post(
+        f"https://api-inference.huggingface.co/models/{HF_MODEL}",
+        headers=headers,
+        json=payload
     )
 
-    try:
-        response = eco_llm(prompt, max_new_tokens=200, do_sample=True)[0]["generated_text"]
-        response = response.split("[/INST]")[-1].strip()  # clean extra tokens
-    except Exception:
-        response = "🌎 Sorry, I couldn't respond right now. Try again soon."
+    print("STATUS:", response.status_code)
+    print("DETAILS:", response.text)
 
-    return {"response": response}
+    if response.status_code == 200:
+        result = response.json()
+        answer = result[0]["generated_text"]
+    else:
+        answer = "⚠️ Sorry, I couldn't process that right now."
+
+    return {"response": answer}
