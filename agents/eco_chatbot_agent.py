@@ -1,33 +1,35 @@
-import os
 import requests
+import os
+from dotenv import load_dotenv
 
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
-HF_MODEL = "google/flan-t5-small"  # or flan-t5-large if you're using that
+load_dotenv()
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 def eco_chatbot_node(state):
     user_input = state.get("input", "")
-    prompt = f"Answer like a helpful SDG chatbot about marine life, forests, biodiversity, and pollution: {user_input}"
 
     headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}"
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "http://localhost:8501"
+,  # Replace with your actual domain or GitHub
+        "X-Title": "Ecosync AI Chatbot"
     }
+
     payload = {
-        "inputs": prompt
+        "model": "google/gemini-2.5-flash",
+        "messages": [
+            {"role": "user", "content": f"Answer like an eco-friendly chatbot. {user_input}"}
+        ],
+        "max_tokens": 1000  # ✅ Reduced token usage
     }
 
-    response = requests.post(
-        f"https://api-inference.huggingface.co/models/{HF_MODEL}",
-        headers=headers,
-        json=payload
-    )
-
-    print("STATUS:", response.status_code)
-    print("DETAILS:", response.text)
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
 
     if response.status_code == 200:
         result = response.json()
-        answer = result[0]["generated_text"]
+        answer = result["choices"][0]["message"]["content"]
     else:
-        answer = "⚠️ Sorry, I couldn't process that right now."
+        answer = f"⚠️ Error: {response.status_code}\n📦 Response: {response.text}"
 
     return {"response": answer}

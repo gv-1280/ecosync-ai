@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-print("HF_API_TOKEN:", os.getenv("HF_API_TOKEN"))  # 🔍 Check if token loads
+os.getenv("OPENROUTER_API_KEY")  # 🔍 Check if token loads
 
 st.set_page_config(page_title="Ecosync AI", layout="wide")
 
