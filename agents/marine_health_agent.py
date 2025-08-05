@@ -1,19 +1,19 @@
-from transformers import pipeline
+# agents/marine_health_agent.py
 
-marine_llm = pipeline("text2text-generation", model="google/flan-t5-large")
+from typing import Dict
+from utils.openrouter import call_openrouter_image_model
 
-def marine_health_node(state):
-    concern = state.get("input", "").strip()
+def marine_health_agent_node(state: Dict) -> Dict:
+    image_data = state.get("image")
+    prompt = state.get("input", "Analyze the marine creature's condition in this image.")
 
-    prompt = (
-        "You are a marine biologist. The user describes a sea animal health issue.\n"
-        f"Symptom: {concern}\n"
-        "What could be the issue, and what is a safe home remedy or next step?"
-    )
+    if not image_data:
+        response = "No image provided for marine health analysis."
+    else:
+        response = call_openrouter_image_model(
+            prompt,
+            image_data,
+            model="moonshotai/kimi-vl-a3b-thinking:free"
+        )
 
-    try:
-        response = marine_llm(prompt, max_length=150, do_sample=True)[0]['generated_text']
-    except Exception:
-        response = "🐟 Sorry, I couldn’t analyze the marine health issue."
-
-    return {"response": response}
+    return {"marine_output": response}

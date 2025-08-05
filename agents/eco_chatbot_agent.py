@@ -1,35 +1,19 @@
-import requests
-import os
-from dotenv import load_dotenv
+from typing import Dict
+from langgraph.graph import StateGraph
+from utils.openrouter import call_openrouter_text_model
 
-load_dotenv()
-
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-def eco_chatbot_node(state):
+# Define the node function
+def eco_chatbot_node(state: Dict) -> Dict:
+    """
+    Handles eco chatbot queries (e.g., coral bleaching, SDGs, eco-awareness).
+    Uses Google Gemini 2.5 Flash Lite from OpenRouter.
+    """
     user_input = state.get("input", "")
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "http://localhost:8501"
-,  # Replace with your actual domain or GitHub
-        "X-Title": "Ecosync AI Chatbot"
-    }
-
-    payload = {
-        "model": "google/gemini-2.5-flash",
-        "messages": [
-            {"role": "user", "content": f"Answer like an eco-friendly chatbot. {user_input}"}
-        ],
-        "max_tokens": 1000  # ✅ Reduced token usage
-    }
-
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-
-    if response.status_code == 200:
-        result = response.json()
-        answer = result["choices"][0]["message"]["content"]
+    if not user_input:
+        response = "I didn't receive any input to process. Please provide a question or message."
     else:
-        answer = f"⚠️ Error: {response.status_code}\n📦 Response: {response.text}"
+        response = call_openrouter_text_model(user_input, model="mistralai/mistral-small-3.2-24b-instruct:free")
 
-    return {"response": answer}
+    # Update state with output
+    return {"output": response}

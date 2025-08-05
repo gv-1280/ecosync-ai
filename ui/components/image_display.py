@@ -1,1 +1,0 @@
-# Image output display

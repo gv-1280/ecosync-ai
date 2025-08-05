@@ -1,8 +1,5 @@
-streamlit
-langchain
+fastapi
+uvicorn
 langgraph
-openai
-googlemaps
-requests
-pillow
-pymongo
+pydantic
+openrouter

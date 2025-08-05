@@ -1,19 +1,30 @@
 import streamlit as st
-from graph.agent_flow import run_agent_flow
-import os
-from dotenv import load_dotenv
-load_dotenv()
+from agent_flow import app_flow
+import base64
 
-os.getenv("OPENROUTER_API_KEY")  # 🔍 Check if token loads
+st.set_page_config(page_title="EcoSync AI", page_icon="🌍", layout="centered")
 
-st.set_page_config(page_title="Ecosync AI", layout="wide")
+st.title("🌱 EcoSync AI")
+st.write("Empowering sustainability through intelligent agents. Ask a question or upload an image related to environment, marine life, or land health.")
 
-st.title("🤖 Welcome to Ecosync AI")
-st.markdown("### 🌱 Ask me anything about the ocean, forests, marine health, or biodiversity.")
+# User input
+user_input = st.text_area("Enter your query:", placeholder="e.g. What are the threats to coral reefs?", height=100)
 
-user_input = st.text_input("Type your question or concern below:")
+# Image upload (optional)
+uploaded_image = st.file_uploader("Upload an image (optional)", type=["jpg", "jpeg", "png"])
 
-if user_input:
-    response = run_agent_flow(user_input)
-    st.markdown("### 🧠 Ecosync Response")
-    st.markdown(f"<div style='font-size:20px'>{response.get('response')}</div>", unsafe_allow_html=True)
+# Convert image to base64 if uploaded
+img_base64 = None
+if uploaded_image:
+    img_bytes = uploaded_image.read()
+    img_base64 = base64.b64encode(img_bytes).decode("utf-8")
+
+# Run Agent
+if st.button("Ask Ecosync AI"):
+    with st.spinner("Thinking..."):
+        response = app_flow.invoke({
+            "input": user_input,
+            "image": img_base64
+        })
+        st.success("Response:")
+        st.write(response.get("output", "No response"))

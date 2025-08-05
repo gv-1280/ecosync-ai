@@ -1,1 +1,0 @@
-# NGO dashboard logic

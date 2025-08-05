@@ -1,23 +1,24 @@
-def router_node(state):
-    user_input = state.get("input", "").lower()
+from typing import Dict
 
-    marine_keywords = [
-        "fish", "turtle", "dolphin", "coral", "jellyfish", "sea", "marine", "ocean", 
-        "white spots", "infection", "gills", "fin", "aquatic", "aquarium"
-    ]
+def router_node(state: Dict) -> str:
+    """
+    Decides which agent to route to based on presence of image or keywords.
+    Returns the agent node name as a string.
+    """
+    user_input = state.get("input", "")
+    image = state.get("image")
 
-    land_keywords = [
-        "dog", "cat", "cow", "deer", "elephant", "leopard", "forest", "zoo",
-        "hoof", "fur", "tail", "injury", "limp", "domestic", "wildlife"
-    ]
+    if image:
+        # Use input text to determine marine or land animal
+        if "marine" in user_input.lower() or "ocean" in user_input.lower():
+            return "marine_health_agent"
 
-    health_keywords = ["symptom", "disease", "sick", "not moving", "bleeding", "spots", "infection"]
+        elif "land" in user_input.lower() or "animal" in user_input.lower():
+            return "land_health_agent"
 
-    if any(kw in user_input for kw in health_keywords):
-        if any(kw in user_input for kw in marine_keywords):
-            return {"next": "MarineHealth", "input": user_input}
-        elif any(kw in user_input for kw in land_keywords):
-            return {"next": "LandHealth", "input": user_input}
+        else:
+            return "marine_health_agent"  # Default to marine if ambiguous
+    elif user_input:
+        return "eco_chatbot_agent"
 
-    # Default to EcoChatbot
-    return {"next": "EcoChatbot", "input": user_input}
+    return "eco_chatbot_agent"  # Final fallback
