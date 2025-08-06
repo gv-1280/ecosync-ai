@@ -19,8 +19,6 @@ This project was developed as a **group collaboration** led by **Gautam Vaishnav
 - ✅ **Location-based clinic and vet finder** (Delhi, Noida, etc.)  
 - ✅ OpenRouter API integration for **lightweight AI models**  
 - ✅ Clean UI using Streamlit with LangGraph for agent flow  
-- ❌ No multilingual support yet *(planned in future)*  
-- ❌ No NGO dashboard or payment integration *(planned in future)*
 
 ---
 
