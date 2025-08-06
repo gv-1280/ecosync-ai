@@ -1,19 +1,44 @@
-from typing import Dict
-from langgraph.graph import StateGraph
-from utils.openrouter import call_openrouter_text_model
+from typing import Dict, Any
+from graph.schema import EcosyncState
+from utils.openrouter import call_text_model
 
-# Define the node function
-def eco_chatbot_node(state: Dict) -> Dict:
+def eco_chatbot_agent(state: EcosyncState) -> Dict[str, Any]:
     """
-    Handles eco chatbot queries (e.g., coral bleaching, SDGs, eco-awareness).
-    Uses Google Gemini 2.5 Flash Lite from OpenRouter.
+    Eco Chatbot Agent - handles general environmental Q&A.
+    MUST return a dictionary to update the state.
     """
-    user_input = state.get("input", "")
-
-    if not user_input:
-        response = "I didn't receive any input to process. Please provide a question or message."
-    else:
-        response = call_openrouter_text_model(user_input, model="mistralai/mistral-small-3.2-24b-instruct:free")
-
-    # Update state with output
-    return {"output": response}
+    input_text = state.get("input", "")
+    
+    # Prepare the prompt
+    system_prompt = """You are an environmental expert chatbot. 
+    Answer questions about environmental conservation, climate change, 
+    sustainability, and ecological issues. Provide accurate, helpful information 
+    to promote environmental awareness."""
+    
+    try:
+        # Call the model
+        response = call_text_model(
+            model="mistralai/mistral-small-3.2-24b-instruct:free",
+            system_prompt=system_prompt,
+            user_prompt=input_text
+        )
+        
+        # CRITICAL: Must return a dictionary
+        return {
+            "response": response,
+            "metadata": {
+                "agent_used": "eco_chatbot_agent",
+                "model": "mistralai/mistral-small-3.2-24b-instruct:free",
+                "success": True
+            }
+        }
+    
+    except Exception as e:
+        return {
+            "response": f"I apologize, but I encountered an error while processing your request: {str(e)}",
+            "metadata": {
+                "agent_used": "eco_chatbot_agent",
+                "success": False,
+                "error": str(e)
+            }
+        }

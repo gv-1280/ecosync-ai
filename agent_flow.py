@@ -1,31 +1,53 @@
-from langgraph.graph import StateGraph
-from graph.schema import AgentState
-from agents.eco_chatbot_agent import eco_chatbot_node
-from agents.marine_health_agent import marine_health_agent_node
-from agents.land_health_agent import land_health_agent_node
+from langgraph.graph import StateGraph, END
+from graph.schema import EcosyncState
 from graph.router import router_node
+from agents.eco_chatbot_agent import eco_chatbot_agent
+from agents.marine_health_agent import marine_health_agent
+from agents.land_health_agent import land_health_agent
 
-# Initialize the graph
-builder = StateGraph(AgentState)
+def create_ecosync_flow():
+    """Create and configure the Ecosync AI multi-agent flow"""
+    
+    # Create the state graph
+    workflow = StateGraph(EcosyncState)
+    
+    # Add nodes
+    workflow.add_node("router", router_node)
+    workflow.add_node("eco_chatbot_agent", eco_chatbot_agent)
+    workflow.add_node("marine_health_agent", marine_health_agent)
+    workflow.add_node("land_health_agent", land_health_agent)
+    
+    # Set entry point
+    workflow.set_entry_point("router")
+    
+    # Add conditional routing from router to agents
+    def route_to_agent(state: EcosyncState) -> str:
+        """Route to the appropriate agent based on router decision"""
+        agent_decision = state.get("agent_decision")
+        if agent_decision in ["eco_chatbot_agent", "marine_health_agent", "land_health_agent"]:
+            return agent_decision
+        else:
+            # Fallback to eco chatbot
+            return "eco_chatbot_agent"
+    
+    workflow.add_conditional_edges(
+        "router",
+        route_to_agent,
+        {
+            "eco_chatbot_agent": "eco_chatbot_agent",
+            "marine_health_agent": "marine_health_agent", 
+            "land_health_agent": "land_health_agent"
+        }
+    )
+    
+    # All agents end the flow
+    workflow.add_edge("eco_chatbot_agent", END)
+    workflow.add_edge("marine_health_agent", END)
+    workflow.add_edge("land_health_agent", END)
+    
+    # Compile the graph
+    app = workflow.compile()
+    return app
 
-# Add nodes
-builder.add_node("eco", eco_chatbot_node)
-builder.add_node("marine", marine_health_agent_node)
-builder.add_node("land", land_health_agent_node)
-builder.add_node("router", router_node)
-
-# Set entry point
-builder.set_entry_point("router")
-
-# Define edges
-builder.add_edge("router", "eco")
-builder.add_edge("router", "marine")
-builder.add_edge("router", "land")
-
-# Set finish conditions
-builder.set_finish_point("eco")
-builder.set_finish_point("marine")
-builder.set_finish_point("land")
-
-# Compile graph
-app_flow = builder.compile()
+# Create the app instance
+app_flow = create_ecosync_flow()
